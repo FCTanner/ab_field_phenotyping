@@ -1,0 +1,241 @@
+rep,row,bay,plot_id_fe,treatment,pad,experiment,id_with_controls,type
+1,buffer,1,240,Buffer,NA,VarxFung,Buffer,NA
+1,1,1,228,No fungicide,50,VarxFung,CVR020,Cultivar
+1,2,1,216,No fungicide,10,VarxFung,Genesis090,Cultivar
+1,3,1,204,No fungicide,20,VarxFung,CVR022,Cultivar
+1,4,1,192,No fungicide,20,VarxFung,CVR481,Cultivar
+1,5,1,180,No fungicide,75,VarxFung,Howzat,Cultivar
+1,6,1,168,No fungicide,5,VarxFung,CVR021,Cultivar
+1,7,1,156,No fungicide,50,VarxFung,CVR478,Cultivar
+1,8,1,144,No fungicide,10,VarxFung,CVR479,Cultivar
+1,9,1,132,No fungicide,30,VarxFung,CVR482,Cultivar
+1,buffer,1,120,Buffer,NA,VarxFung,Buffer,NA
+1,buffer,2,239,Buffer,NA,VarxFung,Buffer,NA
+1,1,2,227,FN Chlorothalonil,0,VarxFung,CVR022,Cultivar
+1,2,2,215,FN Chlorothalonil,0,VarxFung,CVR481,Cultivar
+1,3,2,203,FN Chlorothalonil,0,VarxFung,CVR482,Cultivar
+1,4,2,191,FN Chlorothalonil,0,VarxFung,CVR021,Cultivar
+1,5,2,179,FN Chlorothalonil,0,VarxFung,CVR478,Cultivar
+1,6,2,167,FN Chlorothalonil,0,VarxFung,CVR479,Cultivar
+1,7,2,155,FN Chlorothalonil,0,VarxFung,Howzat,Cultivar
+1,8,2,143,FN Chlorothalonil,0,VarxFung,CVR020,Cultivar
+1,9,2,131,FN Chlorothalonil,0,VarxFung,Genesis090,Cultivar
+1,buffer,2,119,NA,NA,VarxFung,Buffer,NA
+1,buffer,3,238,NA,NA,VarxFung,Buffer,NA
+1,1,3,226,Strat. Veritas,10,VarxFung,CVR022,Cultivar
+1,2,3,214,Strat. Veritas,5,VarxFung,Genesis090,Cultivar
+1,3,3,202,Strat. Veritas,40,VarxFung,CVR478,Cultivar
+1,4,3,190,Strat. Veritas,5,VarxFung,CVR479,Cultivar
+1,5,3,178,Strat. Veritas,50,VarxFung,Howzat,Cultivar
+1,6,3,166,Strat. Veritas,15,VarxFung,CVR481,Cultivar
+1,7,3,154,Strat. Veritas,10,VarxFung,CVR482,Cultivar
+1,8,3,142,Strat. Veritas,3,VarxFung,CVR021,Cultivar
+1,9,3,130,Strat. Veritas,8,VarxFung,CVR020,Cultivar
+1,buffer,3,118,Buffer,NA,VarxFung,Buffer,NA
+2,buffer,4,237,Buffer,NA,VarxFung,Buffer,NA
+2,1,4,225,FN Chlorothalonil,0,VarxFung,CVR482,Cultivar
+2,2,4,213,FN Chlorothalonil,0,VarxFung,Howzat,Cultivar
+2,3,4,201,FN Chlorothalonil,0,VarxFung,CVR022,Cultivar
+2,4,4,189,FN Chlorothalonil,0,VarxFung,CVR478,Cultivar
+2,5,4,177,FN Chlorothalonil,0,VarxFung,CVR481,Cultivar
+2,6,4,165,FN Chlorothalonil,0,VarxFung,Genesis090,Cultivar
+2,7,4,153,FN Chlorothalonil,0,VarxFung,CVR021,Cultivar
+2,8,4,141,FN Chlorothalonil,0,VarxFung,CVR020,Cultivar
+2,9,4,129,FN Chlorothalonil,0,VarxFung,CVR479,Cultivar
+2,buffer,4,117,Buffer,NA,VarxFung,Buffer,NA
+2,buffer,5,236,Buffer,NA,VarxFung,Buffer,NA
+2,1,5,224,Strat. Veritas,10,VarxFung,CVR478,Cultivar
+2,2,5,212,Strat. Veritas,5,VarxFung,CVR020,Cultivar
+2,3,5,200,Strat. Veritas,2,VarxFung,Genesis090,Cultivar
+2,4,5,188,Strat. Veritas,5,VarxFung,CVR021,Cultivar
+2,5,5,176,Strat. Veritas,10,VarxFung,CVR481,Cultivar
+2,6,5,164,Strat. Veritas,15,VarxFung,CVR482,Cultivar
+2,7,5,152,Strat. Veritas,2,VarxFung,CVR479,Cultivar
+2,8,5,140,Strat. Veritas,5,VarxFung,CVR022,Cultivar
+2,9,5,128,Strat. Veritas,40,VarxFung,Howzat,Cultivar
+2,buffer,5,116,Buffer,NA,VarxFung,Buffer,NA
+2,buffer,6,235,Buffer,NA,VarxFung,Buffer,NA
+2,1,6,223,No fungicide,30,VarxFung,CVR481,Cultivar
+2,2,6,211,No fungicide,50,VarxFung,CVR482,Cultivar
+2,3,6,199,No fungicide,75,VarxFung,CVR020,Cultivar
+2,4,6,187,No fungicide,25,VarxFung,CVR021,Cultivar
+2,5,6,175,No fungicide,30,VarxFung,CVR022,Cultivar
+2,6,6,163,No fungicide,80,VarxFung,Howzat,Cultivar
+2,7,6,151,No fungicide,15,VarxFung,Genesis090,Cultivar
+2,8,6,139,No fungicide,80,VarxFung,CVR478,Cultivar
+2,9,6,127,No fungicide,20,VarxFung,CVR479,Cultivar
+2,buffer,6,115,Buffer,NA,VarxFung,Buffer,NA
+3,buffer,7,234,Buffer,NA,VarxFung,Buffer,NA
+3,1,7,222,Strat. Veritas,10,VarxFung,CVR481,Cultivar
+3,2,7,210,Strat. Veritas,5,VarxFung,CVR479,Cultivar
+3,3,7,198,Strat. Veritas,5,VarxFung,Genesis090,Cultivar
+3,4,7,186,Strat. Veritas,20,VarxFung,CVR482,Cultivar
+3,5,7,174,Strat. Veritas,20,VarxFung,CVR020,Cultivar
+3,6,7,162,Strat. Veritas,70,VarxFung,CVR478,Cultivar
+3,7,7,150,Strat. Veritas,60,VarxFung,Howzat,Cultivar
+3,8,7,138,Strat. Veritas,2,VarxFung,CVR021,Cultivar
+3,9,7,126,Strat. Veritas,5,VarxFung,CVR022,Cultivar
+3,buffer,7,114,Buffer,NA,VarxFung,Buffer,NA
+3,buffer,8,233,Buffer,NA,VarxFung,Buffer,NA
+3,1,8,221,No fungicide,25,VarxFung,CVR481,Cultivar
+3,2,8,209,No fungicide,15,VarxFung,CVR479,Cultivar
+3,3,8,197,No fungicide,80,VarxFung,Howzat,Cultivar
+3,4,8,185,No fungicide,5,VarxFung,CVR021,Cultivar
+3,5,8,173,No fungicide,15,VarxFung,CVR022,Cultivar
+3,6,8,161,No fungicide,15,VarxFung,Genesis090,Cultivar
+3,7,8,149,No fungicide,70,VarxFung,CVR478,Cultivar
+3,8,8,137,No fungicide,50,VarxFung,CVR020,Cultivar
+3,9,8,125,No fungicide,40,VarxFung,CVR482,Cultivar
+3,buffer,8,113,Buffer,NA,VarxFung,Buffer,NA
+3,buffer,9,232,Buffer,NA,VarxFung,Buffer,NA
+3,1,9,220,FN Chlorothalonil,0,VarxFung,CVR481,Cultivar
+3,2,9,208,FN Chlorothalonil,0,VarxFung,CVR482,Cultivar
+3,3,9,196,FN Chlorothalonil,0,VarxFung,CVR022,Cultivar
+3,4,9,184,FN Chlorothalonil,0,VarxFung,CVR478,Cultivar
+3,5,9,172,FN Chlorothalonil,0,VarxFung,Howzat,Cultivar
+3,6,9,160,FN Chlorothalonil,0,VarxFung,CVR021,Cultivar
+3,7,9,148,FN Chlorothalonil,0,VarxFung,CVR479,Cultivar
+3,8,9,136,FN Chlorothalonil,0,VarxFung,CVR020,Cultivar
+3,9,9,124,FN Chlorothalonil,0,VarxFung,Genesis090,Cultivar
+3,buffer,9,112,Buffer,NA,VarxFung,Buffer,NA
+4,buffer,10,231,Buffer,NA,VarxFung,Buffer,NA
+4,1,10,219,No fungicide,60,VarxFung,CVR020,Cultivar
+4,2,10,207,No fungicide,50,VarxFung,CVR482,Cultivar
+4,3,10,195,No fungicide,25,VarxFung,CVR022,Cultivar
+4,4,10,183,No fungicide,15,VarxFung,Genesis090,Cultivar
+4,5,10,171,No fungicide,10,VarxFung,CVR021,Cultivar
+4,6,10,159,No fungicide,90,VarxFung,CVR478,Cultivar
+4,7,10,147,No fungicide,90,VarxFung,Howzat,Cultivar
+4,8,10,135,No fungicide,10,VarxFung,CVR479,Cultivar
+4,9,10,123,No fungicide,30,VarxFung,CVR481,Cultivar
+4,buffer,10,111,Buffer,NA,VarxFung,Buffer,NA
+4,buffer,11,230,Buffer,NA,VarxFung,Buffer,NA
+4,1,11,218,FN Chlorothalonil,0,VarxFung,CVR479,Cultivar
+4,2,11,206,FN Chlorothalonil,0,VarxFung,CVR020,Cultivar
+4,3,11,194,FN Chlorothalonil,0,VarxFung,Howzat,Cultivar
+4,4,11,182,FN Chlorothalonil,0,VarxFung,Genesis090,Cultivar
+4,5,11,170,FN Chlorothalonil,0,VarxFung,CVR478,Cultivar
+4,6,11,158,FN Chlorothalonil,0,VarxFung,CVR482,Cultivar
+4,7,11,146,FN Chlorothalonil,0,VarxFung,CVR021,Cultivar
+4,8,11,134,FN Chlorothalonil,0,VarxFung,CVR481,Cultivar
+4,9,11,122,FN Chlorothalonil,0,VarxFung,CVR022,Cultivar
+4,buffer,11,110,Buffer,NA,VarxFung,Buffer,NA
+4,buffer,12,229,Buffer,NA,VarxFung,Buffer,NA
+4,1,12,217,Strat. Veritas,60,VarxFung,CVR478,Cultivar
+4,2,12,205,Strat. Veritas,10,VarxFung,CVR482,Cultivar
+4,3,12,193,Strat. Veritas,5,VarxFung,Genesis090,Cultivar
+4,4,12,181,Strat. Veritas,50,VarxFung,Howzat,Cultivar
+4,5,12,169,Strat. Veritas,2,VarxFung,CVR481,Cultivar
+4,6,12,157,Strat. Veritas,5,VarxFung,CVR021,Cultivar
+4,7,12,145,Strat. Veritas,1,VarxFung,CVR479,Cultivar
+4,8,12,133,Strat. Veritas,5,VarxFung,CVR022,Cultivar
+4,9,12,121,Strat. Veritas,10,VarxFung,CVR020,Cultivar
+4,buffer,12,109,Buffer,NA,VarxFung,Buffer,NA
+buffer,buffer,1,108,Buffer,NA,Fung,Buffer,NA
+1,1,1,96,Strat. Veritas,20,Fung,Howzat,Cultivar
+1,2,1,84,Strat. Veritas,3,Fung,CVR021,Cultivar
+1,3,1,72,Strat. Veritas,0,Fung,Genesis090,Cultivar
+buffer,buffer,1,60,Buffer,NA,Fung,Buffer,NA
+1,5,1,48,Strat. Aviator,1,Fung,CVR021,Cultivar
+1,6,1,36,Strat. Aviator,0,Fung,Genesis090,Cultivar
+1,7,1,24,Strat. Aviator,12,Fung,Howzat,Cultivar
+buffer,buffer,1,12,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,2,107,Buffer,NA,Fung,Buffer,NA
+1,1,2,95,FN Chlorothalonil,0,Fung,CVR021,Cultivar
+1,2,2,83,FN Chlorothalonil,0,Fung,Howzat,Cultivar
+1,3,2,71,FN Chlorothalonil,0,Fung,Genesis090,Cultivar
+buffer,buffer,2,59,Buffer,NA,Fung,Buffer,NA
+2,5,2,47,Strat. Veritas,2,Fung,CVR021,Cultivar
+2,6,2,35,Strat. Veritas,5,Fung,Genesis090,Cultivar
+2,7,2,23,Strat. Veritas,8,Fung,Howzat,Cultivar
+buffer,buffer,2,11,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,3,106,Buffer,NA,Fung,Buffer,NA
+1,1,3,94,Strat. Chlorothalonil,5,Fung,Genesis090,Cultivar
+1,2,3,82,Strat. Chlorothalonil,8,Fung,Howzat,Cultivar
+1,3,3,70,Strat. Chlorothalonil,1,Fung,CVR021,Cultivar
+buffer,buffer,3,58,Buffer,NA,Fung,Buffer,NA
+2,5,3,46,Strat. Chlorothalonil,2,Fung,CVR021,Cultivar
+2,6,3,34,Strat. Chlorothalonil,5,Fung,Howzat,Cultivar
+2,7,3,22,Strat. Chlorothalonil,2,Fung,Genesis090,Cultivar
+buffer,buffer,3,10,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,4,105,Buffer,NA,Fung,Buffer,NA
+1,1,4,93,No fungicide,75,Fung,Howzat,Cultivar
+1,2,4,81,No fungicide,30,Fung,Genesis090,Cultivar
+1,3,4,69,No fungicide,8,Fung,CVR021,Cultivar
+buffer,buffer,4,57,Buffer,NA,Fung,Buffer,NA
+2,5,4,45,No fungicide,60,Fung,Howzat,Cultivar
+2,6,4,33,No fungicide,7,Fung,Genesis090,Cultivar
+2,7,4,21,No fungicide,2,Fung,CVR021,Cultivar
+buffer,buffer,4,9,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,5,104,Buffer,NA,Fung,Buffer,NA
+2,1,5,92,Strat. Aviator,7,Fung,CVR021,Cultivar
+2,2,5,80,Strat. Aviator,5,Fung,Genesis090,Cultivar
+2,3,5,68,Strat. Aviator,20,Fung,Howzat,Cultivar
+buffer,buffer,5,56,Buffer,NA,Fung,Buffer,NA
+2,5,5,44,FN Chlorothalonil,0,Fung,CVR021,Cultivar
+2,6,5,32,FN Chlorothalonil,0,Fung,Howzat,Cultivar
+2,7,5,20,FN Chlorothalonil,0,Fung,Genesis090,Cultivar
+buffer,buffer,5,8,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,6,103,Buffer,NA,Fung,Buffer,NA
+3,1,6,91,Strat. Aviator,30,Fung,Howzat,Cultivar
+3,2,6,79,Strat. Aviator,5,Fung,Genesis090,Cultivar
+3,3,6,67,Strat. Aviator,3,Fung,CVR021,Cultivar
+buffer,buffer,6,55,Buffer,NA,Fung,Buffer,NA
+3,5,6,43,Strat. Veritas,1,Fung,CVR021,Cultivar
+3,6,6,31,Strat. Veritas,5,Fung,Genesis090,Cultivar
+3,7,6,19,Strat. Veritas,15,Fung,Howzat,Cultivar
+buffer,buffer,6,7,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,7,102,Buffer,NA,Fung,Buffer,NA
+3,1,7,90,Strat. Chlorothalonil,2,Fung,Genesis090,Cultivar
+3,2,7,78,Strat. Chlorothalonil,1,Fung,CVR021,Cultivar
+3,3,7,66,Strat. Chlorothalonil,8,Fung,Howzat,Cultivar
+buffer,buffer,7,54,Buffer,NA,Fung,Buffer,NA
+3,5,7,42,No fungicide,12,Fung,CVR021,Cultivar
+3,6,7,30,No fungicide,10,Fung,Genesis090,Cultivar
+3,7,7,18,No fungicide,60,Fung,Howzat,Cultivar
+buffer,buffer,7,6,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,8,101,Buffer,NA,Fung,Buffer,NA
+3,1,8,89,FN Chlorothalonil,0,Fung,Genesis090,Cultivar
+3,2,8,77,FN Chlorothalonil,0,Fung,Howzat,Cultivar
+3,3,8,65,FN Chlorothalonil,0,Fung,CVR021,Cultivar
+buffer,buffer,8,53,Buffer,NA,Fung,Buffer,NA
+4,5,8,41,Strat. Chlorothalonil,0,Fung,CVR021,Cultivar
+4,6,8,29,Strat. Chlorothalonil,1,Fung,Genesis090,Cultivar
+4,7,8,17,Strat. Chlorothalonil,1,Fung,Howzat,Cultivar
+buffer,buffer,8,5,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,9,100,Buffer,NA,Fung,Buffer,NA
+4,1,9,88,Strat. Veritas,5,Fung,Genesis090,Cultivar
+4,2,9,76,Strat. Veritas,40,Fung,Howzat,Cultivar
+4,3,9,64,Strat. Veritas,1,Fung,CVR021,Cultivar
+buffer,buffer,9,52,Buffer,NA,Fung,Buffer,NA
+4,5,9,40,Strat. Aviator,1,Fung,CVR021,Cultivar
+4,6,9,28,Strat. Aviator,35,Fung,Howzat,Cultivar
+4,7,9,16,Strat. Aviator,5,Fung,Genesis090,Cultivar
+buffer,buffer,9,4,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,10,99,Buffer,NA,Fung,Buffer,NA
+4,1,10,87,No fungicide,75,Fung,Howzat,Cultivar
+4,2,10,75,No fungicide,8,Fung,CVR021,Cultivar
+4,3,10,63,No fungicide,10,Fung,Genesis090,Cultivar
+buffer,buffer,10,51,Buffer,NA,Fung,Buffer,NA
+4,5,10,39,FN Chlorothalonil,0,Fung,Howzat,Cultivar
+4,6,10,27,FN Chlorothalonil,0,Fung,Genesis090,Cultivar
+4,7,10,15,FN Chlorothalonil,0,Fung,CVR021,Cultivar
+buffer,buffer,10,3,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,11,98,Buffer,NA,Fung,Buffer,NA
+buffer,1,11,86,Buffer,NA,Fung,Buffer,NA
+buffer,2,11,74,Buffer,NA,Fung,Buffer,NA
+buffer,3,11,62,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,11,50,Buffer,NA,Fung,Buffer,NA
+buffer,5,11,38,Buffer,NA,Fung,Buffer,NA
+buffer,6,11,26,Buffer,NA,Fung,Buffer,NA
+buffer,7,11,14,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,11,2,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,12,97,Buffer,NA,Fung,Buffer,NA
+buffer,1,12,85,Buffer,NA,Fung,Buffer,NA
+buffer,2,12,73,Buffer,NA,Fung,Buffer,NA
+buffer,3,12,61,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,12,49,Buffer,NA,Fung,Buffer,NA
+buffer,5,12,37,Buffer,NA,Fung,Buffer,NA
+buffer,6,12,25,Buffer,NA,Fung,Buffer,NA
+buffer,7,12,13,Buffer,NA,Fung,Buffer,NA
+buffer,buffer,12,1,Buffer,NA,Fung,Buffer,NA
