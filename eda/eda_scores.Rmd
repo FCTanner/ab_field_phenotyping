@@ -1,0 +1,190 @@
+---
+title: "EDA scores"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+
+```{r}
+rm(list=ls())
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+```
+
+## Load data
+
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv") 
+scores_2022 <- read_csv("../data/2022/scores.csv")
+```
+## What genotypes with what treatments
+
+```{r}
+treatments_2020 <- scores_2020 |> 
+  count(id_with_controls, treatment)
+```
+
+## Mean scores in 2022
+
+```{r}
+scores_2022 |> 
+  filter(treatment == "Infected") |> 
+  group_by(id_with_controls) |> 
+  summarise(mean_pad = mean(pad))
+```
+
+
+## Genotypic effect (in untreated plots)
+
+```{r}
+score_mod_2020 <- aov(pad ~ id_with_controls, data = scores_2020 |>
+  filter(treatment == "No fungicide",
+         id_with_controls != "Buffer"))
+
+thsd_score_2020 <- agricolae::HSD.test(score_mod_2020, "id_with_controls")
+letters_score_2020 <- thsd_score_2020$groups |> select(-pad)
+letters_score_2020$id_with_controls <- rownames(letters_score_2020)
+
+score_mod_2022 <- aov(pad ~ id_with_controls, data = scores_2022 |> 
+                        filter(treatment == "Infected"))
+
+thsd_score_2022 <- agricolae::HSD.test(score_mod_2022, "id_with_controls")
+letters_score_2022 <- thsd_score_2022$groups |> select(-pad)
+letters_score_2022$id_with_controls <- rownames(letters_score_2022)
+```
+
+
+```{r}
+p_scores_untreated <- scores_2020 |>
+  filter(treatment == "No fungicide",
+         id_with_controls != "Buffer") |>
+  left_join(letters_score_2020, by = "id_with_controls") |> 
+  mutate(experiment = "2020 - Plots") |>
+  select(id_with_controls, pad, groups, experiment) |>
+  bind_rows(scores_2022 |>
+              filter(treatment == "Infected") |> 
+              # rename() |> 
+              mutate(experiment = "2022 - Trays") |> 
+              left_join(letters_score_2022) |> 
+              select(id_with_controls, pad, groups, experiment)) |> 
+  mutate(id_with_controls = tidytext::reorder_within(x = id_with_controls, within = NA, by =  pad, .fun = mean)) |> 
+  ggplot(aes(y = id_with_controls, x  = pad)) +
+  geom_jitter(height = 0.1, width = 0,  alpha = 0.8, shape = 1)+
+  stat_summary(geom= "point", fun = "mean", color = "red", shape = 3)  +
+  geom_label(aes(x = 100, label = groups), size= 3.5, label.size = 0) +
+  scale_x_continuous(limits = c(0,100), breaks = c(0,20,40,60,80,100)) +
+  tidytext::scale_y_reordered() +
+  facet_wrap(~experiment) +
+  labs(x = "Percent AB damage per plot [%]") +
+  theme(panel.grid.major.y = element_blank(), 
+        axis.title.y= element_blank())
+p_scores_untreated
+```
+
+
+## Effect of fungicide treatments
+
+```{r}
+# p_fung_treatments_2020 <- scores_2020 |> 
+#   filter(id_with_controls != "Buffer") |> 
+#   ggplot(aes(x = pad, y = reorder(treatment, pad), color = treatment, fill = treatment)) +
+#   geom_boxplot(alpha= 0.2, outlier.shape = NA) +
+#   geom_jitter(height = 0.2, width =0,  alpha = 0.6, shape = 1)+
+#   labs(x= "Percent AB damage per plot [%]") +
+#   scale_x_continuous(limits = c(0,100)) +
+#   ggsci::scale_color_aaas() +
+#   ggsci::scale_fill_aaas() +
+#   theme(legend.position = "none", 
+#         axis.title.y= element_blank(),
+#         panel.grid.major.y = element_blank())
+# 
+# 
+# p_fung_treatments_2020
+```
+
+```{r}
+treatment_data <- scores_2020 |> 
+  filter(id_with_controls != "Buffer") |> 
+  select(treatment, pad, id_with_controls) |> 
+  mutate(experiment = "2020 - Plots") |> 
+  bind_rows(scores_2022 |> 
+              select(treatment, pad, id_with_controls) |> 
+              # rename(treatment = trts, 
+              #        pad = PAD,
+              #        id_with_controls = accname) |> 
+              mutate(experiment = "2022 - Trays")) |> 
+  mutate(treatment= case_when(treatment == "FN Chlorothalonil" ~ "Fortnightly Chloro.",
+                              treatment == "Strat. Chlorothalonil" ~ "Strat. Chloro.",
+                              treatment == "Fungicide" ~ "Three-weekly Chloro.",
+                              treatment == "Salt + Fungicide" ~ "Salt + Three-weekly Chloro.",
+                              TRUE ~ treatment))
+```
+
+## Check for sig. differences 
+
+```{r}
+treatment_mod_2020 <- aov(pad ~ treatment, data = treatment_data |>
+  filter(experiment == "2020 - Plots",
+         id_with_controls != "Buffer"))
+summary(treatment_mod_2020)
+
+
+thsd_trt_2020 <- agricolae::HSD.test(treatment_mod_2020, "treatment")
+letters_trt_2020 <- thsd_trt_2020$groups |> select(-pad)
+letters_trt_2020$treatment <- rownames(letters_trt_2020)
+
+
+treatment_mod_2022 <- aov(pad ~ treatment, data = treatment_data |>
+  filter(experiment == "2022 - Trays"))
+summary(treatment_mod_2022)
+
+
+thsd_trt_2022 <- agricolae::HSD.test(treatment_mod_2022, "treatment")
+letters_trt_2022 <- thsd_trt_2022$groups |> select(-pad)
+letters_trt_2022$treatment <- rownames(letters_trt_2022)
+```
+
+```{r}
+pal = "ggthemes::colorblind"
+
+p_fung_treatments <- treatment_data |> 
+  left_join(rbind(letters_trt_2020, letters_trt_2022)) |> 
+  ggplot(aes(y = pad, x = reorder(treatment, desc(pad)),  fill = treatment, color = treatment)) +
+  geom_boxplot(alpha= 0.5, outlier.shape = NA, color= "black") +
+  geom_point(width = 0.2, height =0,  alpha = 0.6, 
+             position = position_jitter(width = 0.2, height = 0, seed = 7))+
+  geom_point(width = 0.2, height =0,  alpha = 0.6, shape = 1, color= "black", 
+             position = position_jitter(width = 0.2, height = 0, seed = 7)) +
+  geom_label(aes(y = 100, label = groups), size= 3.5, label.size = 0, color = "black", fill = "white") +
+  labs(y= "Percent AB damage per plot [%]", 
+       x = "Treatment") +
+  scale_y_continuous(limits = c(0,100), breaks = c(0,20,40,60,80,100)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 8)) +
+  scale_fill_manual(values = paletteer::paletteer_d(palette = pal, 8)) +
+  scale_color_manual(values = paletteer::paletteer_d(palette = pal, 8)) +
+  facet_wrap(~experiment, nrow = 1, scales = "free_x") +
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank())
+
+p_fung_treatments
+```
+
+
+
+```{r}
+ggsave(plot = p_fung_treatments, filename = "out/graphs/pad_treatment.pdf", device = "pdf", units = "cm", width = 16, height = 12, limitsize = F)
+ggsave(plot = p_scores_untreated, filename = "out/graphs/pad_untreated.pdf", device = "pdf", units = "cm", width = 16, height = 10, limitsize = F)
+```
+
+
+
+```{r}
+sessionInfo()
+```

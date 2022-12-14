@@ -1,0 +1,146 @@
+---
+title: "PCA for treatments in 2022"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+
+```{r}
+rm(list=ls())
+`%nin%` = Negate(`%in%`)
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(patchwork)
+library(ggfortify)
+```
+
+## Load data
+
+```{r}
+hyperspec_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+scores_2020 <- read_csv("../data/2020/scores.csv")
+
+hyperspec_2022 <- read_csv("../data/2022/hyperspec_full.csv")
+scores_2022 <- read_csv("../data/2022/scores.csv")
+```
+```{r}
+hyperspec_2020_wide <-hyperspec_2020 |> 
+  left_join(scores_2020) |> 
+  filter(!is.na(reflectance_raw)) |> 
+  mutate(treatment = case_when(str_detect(treatment, "Strat") ~ "Strategic fungicides",
+                               TRUE ~ treatment)) |> 
+  # filter(treatment %in% c("No fungicide", 
+  #                         "FN Chlorothalonil",
+  #                         "Strat. Aviator")) |> 
+  filter(treatment != "Buffer") |> 
+  pivot_wider(id_cols = c(plot_id_fe, treatment, id_with_controls), values_from = reflectance_smoothed, names_from = wavelength, values_fn = mean)
+
+hyperspec_2022_wide <-hyperspec_2022 |> 
+  left_join(scores_2022) |> 
+  filter(!is.na(reflectance_raw)) |> 
+  pivot_wider(id_cols = c(tray_id, treatment, id_with_controls), values_from = reflectance_smoothed, names_from = wavelength, values_fn = mean) 
+```
+# PCA 
+
+```{r}
+pca_2020 <- prcomp(hyperspec_2020_wide[,c(4:ncol(hyperspec_2022_wide))],
+                   center = TRUE,
+                   scale. = TRUE)
+
+pca_2022 <- prcomp(hyperspec_2022_wide[,c(4:ncol(hyperspec_2022_wide))],
+                   center = TRUE,
+                   scale. = TRUE)
+
+summary(pca_2020)
+
+summary(pca_2022)
+```
+
+# PCA plot 2022
+```{r}
+pal = "ggthemes::colorblind"
+paletteer::paletteer_d(palette = pal, 8)
+
+trt_cols_2020 <- c("#CC79A7FF", "#E69F00FF","#009E73FF")
+treatment_pca_plot_2022 <- autoplot(pca_2022,
+                                    data = hyperspec_2022_wide,
+                                    colour = 'treatment',
+                                    shape = 'treatment',
+                                   alpha = 0.7) +
+  scale_color_manual(values = trt_cols_2020) +
+  labs(title = "2022 Trays") +
+  theme(legend.title = element_blank(),
+        legend.position = "bottom")
+
+treatment_pca_plot_2022
+```
+```{r}
+genotype_pca_plot_2022 <- autoplot(pca_2022,
+                                    data = hyperspec_2022_wide,
+                                    colour = 'id_with_controls',
+                                   shape = 'id_with_controls',
+                                   alpha = 0.7) +
+  ggsci::scale_color_jco() +
+  labs(title = "Genotype") +
+  theme(legend.title = element_blank(),
+        legend.position = "bottom")
+
+genotype_pca_plot_2022
+```
+
+```{r}
+pca_plot_2022 <- treatment_pca_plot_2022 + genotype_pca_plot_2022
+pca_plot_2022
+```
+
+# PCA plot 2020
+
+```{r}
+trt_cols_2022 <- c("#000000FF", "#56B4E9FF", "#F0E442FF")
+
+treatment_pca_plot_2020 <- autoplot(pca_2020,
+                                    data = hyperspec_2020_wide,
+                                    colour = 'treatment',
+                                    shape = 'treatment',
+                                   alpha = 0.7) +
+  scale_color_manual(values = trt_cols_2022) +
+  labs(title = "2020 Plots") +
+  theme(legend.title = element_blank(),
+        legend.position = "bottom")
+
+treatment_pca_plot_2020
+```
+```{r}
+genotype_pca_plot_2020 <- autoplot(pca_2020,
+                                    data = hyperspec_2020_wide,
+                                    colour = 'id_with_controls',
+                                   shape = 'id_with_controls',
+                                   alpha = 0.7) +
+  ggsci::scale_color_jco() +
+  labs(title = "Genotype") +
+  theme(legend.title = element_blank(),
+        legend.position = "bottom")
+
+genotype_pca_plot_2020
+```
+
+```{r}
+pca_plot_treatment <- treatment_pca_plot_2020 + treatment_pca_plot_2022 + plot_layout(nrow= 2)
+pca_plot_treatment
+
+ggsave(plot = pca_plot_treatment, filename = "out/graphs/pca_treatment.pdf", units= "cm", height = 14, width= 10, scale = 1.2)
+```
+
+
+
+
+
+```{r}
+sessionInfo()
+```

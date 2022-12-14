@@ -1,0 +1,165 @@
+---
+title: "Test best algorithm for prediction of PAD with hyperspectral data from 2020 on 2022 data"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+.libPaths("C:/R-packages2")
+rm(list=ls())
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(prospectr)
+library(tidymodels)
+```
+
+# Load data
+
+## 2020
+
+```{r}
+cv_results_full_spectrum_2020 <- read_csv("out/metrics/predict_pad_2020_5fcv_5rep_seed123.csv")
+```
+
+```{r}
+hyper_metrics_clean_2020 <- cv_results_full_spectrum_2020 |>
+  pivot_wider(names_from = .metric, values_from = .estimate) |> 
+  mutate(nil_only = case_when(nil_only == TRUE ~ "NIL trt",
+                              nil_only == FALSE ~ "NIL + FN Chloro"),
+         grouping = str_c(VNIR_only, nil_only, dataset, normalization, derivative, model, "-", response, sep = " "),
+         response = str_remove(response, "reflectance_"),
+         description = str_c(model, "-", response, normalization, derivative, sep = " "),
+         sorting_hat = str_c(VNIR_only, nil_only, dataset, sep = " ")) |>
+  group_by(grouping)  |>
+  summarise(mean_rsq = mean(rsq, na.rm = T),
+            sd_rsq  = sd(rsq, na.rm = T),
+            mean_rmse = mean(rmse, na.rm = T),
+            sd_rmse = sd(rmse, na.rm = T),
+            n_cv_folds = n(), # Checking that 25 folds exist
+            dataset = dataset,
+            response = response,
+            VNIR_only = VNIR_only,
+            nil_only = nil_only,
+            sorting_hat = sorting_hat,
+            description = description,
+            normalization = normalization, 
+            derivative = derivative,
+            model = model) |>
+  distinct() 
+```
+
+```{r}
+hyper_metrics_clean_2020 |> 
+  ungroup() |> 
+  slice_min(order_by = mean_rmse)
+```
+# Test best algorithm on 2022 data
+
+## Parameters
+
+```{r}
+sav_gol_gap_size = 1
+sav_gol_segment_size = 9
+source("../helper_functions/prep_hyperspec_dataset.R")
+```
+
+```{r}
+hyperspec_double_FWHM_2020 <- read_csv("../data/2020/hyperspec_double_FWHM.csv")
+scores_2020 <- read_csv("../data/2020/scores.csv")
+
+hyperspec_double_FWHM_2022 <- read_csv("../data/2022/hyperspec_double_FWHM.csv")|> rename(plot_id_fe = tray_id)
+scores_2022 <- read_csv("../data/2022/scores.csv") |> rename(plot_id_fe = tray_id)
+```
+
+## Prepare data
+
+```{r}
+prepped_2020_data <- prep_hyperspec_dataset(dataset = hyperspec_double_FWHM_2020,
+                                            scores = scores_2020,
+                                            nil_only = TRUE, 
+                                            response_chr = "reflectance_raw", 
+                                            VNIR_only = FALSE, 
+                                            normalization = "None", 
+                                            derivative = "Second",
+                                            gapDer_wl = sav_gol_gap_size,
+                                            gapDer_seg = sav_gol_segment_size)
+
+prepped_2022_data <- prep_hyperspec_dataset(dataset = hyperspec_double_FWHM_2022,
+                                            scores = scores_2022,
+                                            nil_only = TRUE, 
+                                            response_chr = "reflectance_raw", 
+                                            VNIR_only = FALSE, 
+                                            normalization = "None", 
+                                            derivative = "Second",
+                                            gapDer_wl = sav_gol_gap_size,
+                                            gapDer_seg = sav_gol_segment_size)
+```
+## Fit full 2020 model
+
+```{r}
+ref_recipe <- recipe((pad ~ .), 
+                     data = prepped_2020_data)  |>
+  update_role(plot_id_fe, new_role = "ID")|>
+  update_role(treatment, new_role = "ID")|>
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |>
+  step_zv(all_predictors()) 
+
+rf_spec <- rand_forest()|>
+  set_engine("ranger")|>
+  set_mode("regression")|>
+  translate()
+
+rf_wf <- workflow()|>
+  add_model(rf_spec)|>
+  add_recipe(ref_recipe)
+
+set.seed(123)
+fit_2020 <- rf_wf |> fit(data = prepped_2020_data)
+```
+
+## Evaluate on 2022 data
+
+```{r}
+predict_2022 <- fit_2020 |> predict(new_data = prepped_2022_data) |> 
+  bind_cols(.truth = prepped_2022_data$pad,
+            plot_id_fe = prepped_2022_data$plot_id_fe) |> 
+  left_join(scores_2022)
+```
+### Metrics
+
+```{r}
+predict_2022 |> 
+  metrics(estimate = .pred, truth = .truth)
+
+cor.test(predict_2022$.truth, predict_2022$.pred, method = "spearman")
+```
+
+### Plot predictions
+
+```{r}
+predict_2022 |> 
+  ggplot(aes(x = .truth, y = .pred, color = id_with_controls)) +
+  geom_point() +
+  scale_y_continuous(limits = c(0,100)) +
+  scale_x_continuous(limits = c(0,100))
+```
+
+
+
+
+```{r}
+sessionInfo()
+```

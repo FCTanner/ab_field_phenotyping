@@ -1,0 +1,42 @@
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{llll}
+\toprule
+Pipeline Step & Reg. 2020 RMSE & Class. 2020 ROC AUC & Class. 2022 ROC AUC \\ 
+\midrule
+\multicolumn{1}{l}{Binning} \\ 
+\midrule
+Double FWHM binned & \$13.84 replace\_this\_with\_pm 4.29\$ & \$0.98 replace\_this\_with\_pm 0.04\$ & \$0.78 replace\_this\_with\_pm 0.15\$ \\ 
+Full spectrum & \$13.94 replace\_this\_with\_pm 5.1\$ & \$0.98 replace\_this\_with\_pm 0.03\$ & \$0.79 replace\_this\_with\_pm 0.14\$ \\ 
+FWHM binned & \$13.63 replace\_this\_with\_pm 4.12\$ & \$0.98 replace\_this\_with\_pm 0.03\$ & \$0.8 replace\_this\_with\_pm 0.14\$ \\ 
+\midrule
+\multicolumn{1}{l}{Derivation} \\ 
+\midrule
+First & \$14.28 replace\_this\_with\_pm 5.24\$ & \$0.99 replace\_this\_with\_pm 0.01\$ & \$0.79 replace\_this\_with\_pm 0.13\$ \\ 
+None & \$13.93 replace\_this\_with\_pm 4.37\$ & \$0.98 replace\_this\_with\_pm 0.04\$ & \$0.8 replace\_this\_with\_pm 0.15\$ \\ 
+Second & \$13.11 replace\_this\_with\_pm 3.93\$ & \$0.98 replace\_this\_with\_pm 0.03\$ & \$0.78 replace\_this\_with\_pm 0.14\$ \\ 
+\midrule
+\multicolumn{1}{l}{Learning algorithm} \\ 
+\midrule
+LASSO & \$12.81 replace\_this\_with\_pm 3.09\$ & NA & NA \\ 
+LASSO 0.7 cor filter & \$18.13 replace\_this\_with\_pm 6.65\$ & NA & NA \\ 
+PLSR / PLSDA & \$12.44 replace\_this\_with\_pm 3.15\$ & \$1 replace\_this\_with\_pm 0.01\$ & \$0.78 replace\_this\_with\_pm 0.14\$ \\ 
+RF & \$12.89 replace\_this\_with\_pm 3.82\$ & \$0.97 replace\_this\_with\_pm 0.05\$ & \$0.81 replace\_this\_with\_pm 0.14\$ \\ 
+SVM & \$13.92 replace\_this\_with\_pm 3.65\$ & \$0.99 replace\_this\_with\_pm 0.03\$ & \$0.77 replace\_this\_with\_pm 0.15\$ \\ 
+\midrule
+\multicolumn{1}{l}{Normalization} \\ 
+\midrule
+None & \$12.18 replace\_this\_with\_pm 3.54\$ & \$0.97 replace\_this\_with\_pm 0.05\$ & \$0.81 replace\_this\_with\_pm 0.14\$ \\ 
+Pu & \$15.25 replace\_this\_with\_pm 4.81\$ & \$1 replace\_this\_with\_pm 0.01\$ & \$0.77 replace\_this\_with\_pm 0.15\$ \\ 
+\midrule
+\multicolumn{1}{l}{Smoothing} \\ 
+\midrule
+Raw & \$13.76 replace\_this\_with\_pm 4.56\$ & \$0.99 replace\_this\_with\_pm 0.03\$ & \$0.79 replace\_this\_with\_pm 0.14\$ \\ 
+Smoothed & \$13.93 replace\_this\_with\_pm 4.39\$ & \$0.98 replace\_this\_with\_pm 0.04\$ & \$0.8 replace\_this\_with\_pm 0.15\$ \\ 
+\midrule
+\multicolumn{1}{l}{VNIR + SWIR} \\ 
+\midrule
+VNIR + SWIR & \$13.84 replace\_this\_with\_pm 4.49\$ & \$0.98 replace\_this\_with\_pm 0.03\$ & \$0.78 replace\_this\_with\_pm 0.15\$ \\ 
+VNIR only & \$13.76 replace\_this\_with\_pm 4.56\$ & \$0.98 replace\_this\_with\_pm 0.04\$ & \$0.8 replace\_this\_with\_pm 0.14\$ \\ 
+\bottomrule
+\end{longtable}
+

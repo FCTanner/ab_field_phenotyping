@@ -1,0 +1,159 @@
+---
+title: "Variable selection for treatment classification"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+# Steps for variable selection
+
+see 10.1186/s13007-019-0508-7
+Li 2019 Plant Methods
+
+- Use all extracted traits in RF model, extract variable importance
+- Fit simple models, test on opposite years - see test_important_variables.Rmd
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+.libPaths("C:/R-packages2")
+rm(list=ls())
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(tidymodels)
+library(doParallel)
+```
+
+
+## Set parameters for analysis
+
+```{r}
+random_seeds <- seq(1, 500, 1)
+```
+
+# Load and prepare data
+
+## 2020
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+hyperspec_full_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+lidar_2020 <- read_csv("../data/2020/lidar_traits.csv")
+```
+
+## 2022
+
+```{r}
+scores_2022 <- read_csv("../data/2022/scores.csv")
+hyperspec_full_2022 <- read_csv("../data/2022/hyperspec_full.csv")
+lidar_2022 <- read_csv("../data/2022/lidar_traits.csv")
+```
+```{r}
+mod_data_2020 <- hyperspec_full_2020 |> 
+  pivot_wider(id_cols = plot_id_fe, values_from = reflectance_smoothed, names_from = wavelength, names_prefix = "R") |> 
+  left_join(scores_2020) |> 
+  left_join(lidar_2020) |> 
+  filter(treatment %in% c("No fungicide", "FN Chlorothalonil")) |> 
+  select(-c(experiment, row, bay, rep, type)) 
+```
+
+```{r}
+mod_data_2022 <- hyperspec_full_2022 |> 
+  filter(!is.na(tray_id)) |> 
+  pivot_wider(id_cols = tray_id, values_from = reflectance_smoothed, names_from = wavelength, names_prefix = "R") |> 
+  left_join(scores_2022) |> 
+  left_join(lidar_2022 |> 
+              filter(!is.na(groundcover)) |> 
+              mutate(tray_id = str_replace(tray_id, "_", "__"))) |> 
+  rename(plot_id_fe = tray_id) |> 
+  select(-c(scoring_order, plots, splots, block))
+```
+
+## Fit random forest models to determine variable importance
+
+```{r}
+extract_vi_from_random_forests <- function(in_data = mod_data_2020) {
+  out_list <- list() # Initialise list
+  for(i in 1:length(random_seeds)){
+    set.seed(random_seeds[i])
+    rf_recipe <- recipe(treatment ~ . , data = in_data) |> 
+      update_role(plot_id_fe, new_role = "ID")|>
+      update_role(pad, new_role = "ID")|>
+      update_role(id_with_controls, new_role = "ID") |> 
+      step_normalize(all_predictors())  |> 
+      step_center(all_predictors()) |>
+      step_scale(all_predictors()) |>
+      step_zv(all_predictors()) 
+    
+    rf_model <- rand_forest() |> 
+      set_engine("ranger", importance = "permutation") |> 
+      set_mode("classification")
+    
+    rf_workflow <- workflow() |> 
+      add_recipe(rf_recipe) |> 
+      add_model(rf_model)
+    
+    rf_fit <- rf_workflow |> 
+      fit(data = in_data)
+    
+    ranger_obj <- extract_fit_parsnip(rf_fit)$fit
+    
+    vi <- data.frame(t(ranger_obj$variable.importance))
+    vi$run <- i
+    out_list[[i]] <- vi
+    
+  }
+  return(out_list)
+}
+```
+
+### Set up parallel processing
+
+```{r}
+all_cores <- parallel::detectCores(logical = FALSE)
+
+library(doParallel)
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+clusterEvalQ(cl, .libPaths("C:/R-packages2/"))
+```
+
+```{r}
+vi_list_2020 <- extract_vi_from_random_forests(in_data = mod_data_2020)
+vi_list_2022 <- extract_vi_from_random_forests(in_data = mod_data_2022)
+```
+
+
+### Plot variable importance
+
+```{r}
+vip <- bind_rows(vi_list_2020) |> 
+  mutate(year = 2020) |> 
+  bind_rows(bind_rows(vi_list_2022) |> 
+              mutate(year = 2022)) |> 
+  pivot_longer(cols = c(-run, -year), names_to = "index", values_to = "importance") |> 
+  mutate(index = toupper(index),
+         sensor = case_when(index %in% c("GROUNDCOVER", "BIOMASS") ~ "Lidar - based",
+                            TRUE ~ "Vegetation index"),
+         index = case_when(index == "GROUNDCOVER" ~ "Ground cover",
+                           index == "BIOMASS" ~ "Biomass",
+                           TRUE ~ index))
+```
+
+```{r}
+vip |> 
+  write_csv("out/metrics/variable_importance_classify_di.csv")
+```
+
+```{r}
+sessionInfo()
+```

@@ -1,0 +1,297 @@
+---
+title: "Classify diseased plots vs fungicide - treated / salinity - stressed plots with full spectrum data"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+
+```{r}
+.libPaths("C:/R-packages2")
+rm(list=ls())
+```
+
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(tidymodels)
+library(doParallel)
+library(prospectr)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load data
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+hyperspec_full_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+hyperspec_FWHM_2020 <- read_csv("../data/2020/hyperspec_FWHM.csv")
+hyperspec_double_FWHM_2020 <- read_csv("../data/2020/hyperspec_double_FWHM.csv")
+```
+
+```{r}
+scores_2022 <- read_csv("../data/2022/scores.csv") |> rename(plot_id_fe = tray_id)
+hyperspec_full_2022 <- read_csv("../data/2022/hyperspec_full.csv") |> rename(plot_id_fe = tray_id)
+hyperspec_FWHM_2022 <- read_csv("../data/2022/hyperspec_FWHM.csv") |> rename(plot_id_fe = tray_id)
+hyperspec_double_FWHM_2022 <- read_csv("../data/2022/hyperspec_double_FWHM.csv") |> rename(plot_id_fe = tray_id)
+```
+
+## Preparation
+
+## Set parameters for analysis
+
+
+```{r}
+seed <- 123
+n_folds <- 5
+n_repeats <- 5
+sav_gol_gap_size = 1
+sav_gol_segment_size = 9
+```
+
+
+### Source functions
+
+
+```{r}
+source("../helper_functions/prep_hyperspec_dataset.R")
+source("../helper_functions/run_classification_cv.R")
+```
+
+
+### Build iterator
+
+```{r}
+# Without derivatives, (includes smoothed reflectance)
+dataset_iterator_no_der <- expand.grid(response_chr = c("reflectance_raw", "reflectance_smoothed"), 
+                                       VNIR_only = c(TRUE, FALSE),
+                                       nil_only = FALSE,
+                                       normalization = c("Pu", "None"), 
+                                       derivative = c("None"),
+                                       stringsAsFactors = FALSE)
+
+# Derivatives (does not include smoothed reflectance because smoothing is included in gapDer function)
+dataset_iterator_derivatives <- expand.grid(response_chr = c("reflectance_raw"), 
+                                            VNIR_only = c(TRUE, FALSE),
+                                            nil_only = FALSE,
+                                            normalization = c("Pu", "None"), 
+                                            derivative = c("First", "Second"),
+                                            stringsAsFactors = FALSE)
+
+dataset_iterator <- rbind(dataset_iterator_no_der, dataset_iterator_derivatives)
+```
+
+### Create empty dataframe to hold model metrics
+
+
+```{r}
+cv_metrics_out_template <- data.frame(id = character(),
+                                      id2 = character(),
+                                      .metric = character(),
+                                      .estimator = character(),
+                                      .estimate = numeric(),
+                                      .config = character(),
+                                      response = character(),
+                                      VNIR_only = logical(),
+                                      model = character(),
+                                      normalization = character(),
+                                      derivative = character())
+
+```
+
+
+
+### Set up parallel processing
+```{r}
+all_cores <- parallel::detectCores(logical = FALSE)
+
+library(doParallel)
+cl <- makePSOCKcluster(all_cores)
+registerDoParallel(cl)
+clusterEvalQ(cl, .libPaths("C:/R-packages2/"))
+```
+
+
+```{r}
+test <- prep_hyperspec_dataset(hyperspec_full_2022, scores = scores_2022, nil_only = F, VNIR_only = F)
+names(test)
+```
+
+# Run 2020 CV 
+
+### Double FWHM CV
+
+```{r, warning = FALSE, message = FALSE}
+double_FWHM_cv_metrics_2020 <- cv_metrics_out_template
+
+
+for(i in 1:nrow(dataset_iterator)){
+  dat_for_cv <- prep_hyperspec_dataset(dataset = hyperspec_double_FWHM_2020,
+                                       nil_only = FALSE,
+                                       response = dataset_iterator$response[i],
+                                       VNIR_only = dataset_iterator$VNIR_only[i],
+                                       normalization = dataset_iterator$normalization[i],
+                                       derivative = dataset_iterator$derivative[i])
+  output <- run_classification_cv(input = dat_for_cv, 
+                                  output = cv_metrics_out_template,
+                                  random_seed = seed)
+  try(double_FWHM_cv_metrics_2020 <- rbind(double_FWHM_cv_metrics_2020, output))
+}
+
+double_FWHM_cv_metrics_2020$dataset <- "Double FWHM binned"
+```
+
+
+
+### FWHM CV
+
+```{r, warning = FALSE, echo = FALSE}
+FWHM_cv_metrics_2020 <- cv_metrics_out_template
+
+
+for(i in 1:nrow(dataset_iterator)){
+  dat_for_cv <- prep_hyperspec_dataset(dataset = hyperspec_FWHM_2020,
+                                       nil_only = FALSE,
+                                       response = dataset_iterator$response[i],
+                                       VNIR_only = dataset_iterator$VNIR_only[i],
+                                       normalization = dataset_iterator$normalization[i],
+                                       derivative = dataset_iterator$derivative[i])
+  output <- run_classification_cv(input = dat_for_cv, 
+                                  output = cv_metrics_out_template,
+                                  random_seed = seed)
+  try(FWHM_cv_metrics_2020 <- rbind(FWHM_cv_metrics_2020, output))
+}
+
+FWHM_cv_metrics_2020$dataset <- "FWHM binned"
+```
+
+### Full spectrum CV
+
+```{r, warning = FALSE, echo = FALSE}
+full_cv_metrics_2020 <- cv_metrics_out_template
+
+
+for(i in 1:nrow(dataset_iterator)){
+  dat_for_cv <- prep_hyperspec_dataset(dataset = hyperspec_full_2020,
+                                       nil_only = FALSE, 
+                                       response = dataset_iterator$response[i],
+                                       VNIR_only = dataset_iterator$VNIR_only[i],
+                                       normalization = dataset_iterator$normalization[i],
+                                       derivative = dataset_iterator$derivative[i])
+  output <- run_classification_cv(input = dat_for_cv, 
+                                  output = cv_metrics_out_template,
+                                  random_seed = seed)
+  try(full_cv_metrics_2020 <- rbind(full_cv_metrics_2020, output))
+}
+
+full_cv_metrics_2020$dataset <- "Full spectrum"
+```
+
+# Run 2022 CV 
+
+### Double FWHM CV
+
+```{r, warning = FALSE, message = FALSE}
+double_FWHM_cv_metrics_2022 <- cv_metrics_out_template
+
+
+for(i in 1:nrow(dataset_iterator)){
+  dat_for_cv <- prep_hyperspec_dataset(dataset = hyperspec_double_FWHM_2022,
+                                       scores = scores_2022,
+                                       nil_only = FALSE,
+                                       response = dataset_iterator$response[i],
+                                       VNIR_only = dataset_iterator$VNIR_only[i],
+                                       normalization = dataset_iterator$normalization[i],
+                                       derivative = dataset_iterator$derivative[i])
+  output <- run_classification_cv(input = dat_for_cv, 
+                                  output = cv_metrics_out_template,
+                                  random_seed = seed)
+  try(double_FWHM_cv_metrics_2022 <- rbind(double_FWHM_cv_metrics_2022, output))
+}
+
+double_FWHM_cv_metrics_2022$dataset <- "Double FWHM binned"
+```
+
+
+### FWHM CV
+
+```{r, warning = FALSE, echo = FALSE}
+FWHM_cv_metrics_2022 <- cv_metrics_out_template
+
+
+for(i in 1:nrow(dataset_iterator)){
+  dat_for_cv <- prep_hyperspec_dataset(dataset = hyperspec_FWHM_2022,
+                                       scores = scores_2022, 
+                                       nil_only = FALSE,
+                                       response = dataset_iterator$response[i],
+                                       VNIR_only = dataset_iterator$VNIR_only[i],
+                                       normalization = dataset_iterator$normalization[i],
+                                       derivative = dataset_iterator$derivative[i])
+  output <- run_classification_cv(input = dat_for_cv, 
+                                  output = cv_metrics_out_template,
+                                  random_seed = seed)
+  try(FWHM_cv_metrics_2022 <- rbind(FWHM_cv_metrics_2022, output))
+}
+
+FWHM_cv_metrics_2022$dataset <- "FWHM binned"
+```
+
+### Full spectrum CV
+
+```{r, warning = FALSE, echo = FALSE}
+full_cv_metrics_2022 <- cv_metrics_out_template
+
+
+for(i in 1:nrow(dataset_iterator)){
+  dat_for_cv <- prep_hyperspec_dataset(dataset = hyperspec_full_2022,
+                                       scores =scores_2022, 
+                                       nil_only = FALSE, 
+                                       response = dataset_iterator$response[i],
+                                       VNIR_only = dataset_iterator$VNIR_only[i],
+                                       normalization = dataset_iterator$normalization[i],
+                                       derivative = dataset_iterator$derivative[i])
+  output <- run_classification_cv(input = dat_for_cv, 
+                                  output = cv_metrics_out_template,
+                                  random_seed = seed)
+  try(full_cv_metrics_2022 <- rbind(full_cv_metrics_2022, output))
+}
+
+full_cv_metrics_2022$dataset <- "Full spectrum"
+```
+
+
+
+
+## Evaluate CV
+
+* Combine CV metrics from all datasets
+
+```{r}
+cv_metrics_2020 <- double_FWHM_cv_metrics_2020
+cv_metrics_2020 <- rbind(full_cv_metrics_2020, FWHM_cv_metrics_2020, double_FWHM_cv_metrics_2020)
+```
+
+```{r}
+cv_metrics_2022 <- double_FWHM_cv_metrics_2022
+cv_metrics_2022 <- rbind(full_cv_metrics_2022, FWHM_cv_metrics_2022, double_FWHM_cv_metrics_2022)
+```
+
+
+
+```{r}
+write_csv(cv_metrics_2020, paste0("out/metrics/classify_treatment_hyperspec_2020_", n_folds, "fcv_", n_repeats, "rep_seed", seed, ".csv"))
+
+write_csv(cv_metrics_2022, paste0("out/metrics/classify_treatment_hyperspec_2022_", n_folds, "fcv_", n_repeats, "rep_seed", seed, ".csv"))
+```
+
+```{r}
+sessionInfo()
+```

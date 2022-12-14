@@ -1,0 +1,162 @@
+---
+title: "VI extraction"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+
+```{r}
+rm(list=ls())
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+```
+
+## Load data
+
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+hyper_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+hyper <- hyper_2020
+```
+
+```{r}
+scores_2022 <- read_csv("../data/2022/scores.csv")
+hyper_2022 <- read_csv("../data/2022/hyperspec_full.csv")
+```
+
+```{r}
+hyper <- hyper_2020 |> 
+  rename(id = plot_id_fe) |> 
+  mutate(year = 2020,
+         id = as.character(id)) |> 
+  bind_rows(hyper_2022 |> 
+              rename(id = tray_id) |> 
+              mutate(year = 2022) |> 
+              filter(!is.na(id)))
+```
+
+
+## Todo
+
+Calculate RGB bands
+Calculate all VIs
+
+## Calculate "Bands"
+
+Zhang 2017 Remote sensing 
+10.3390/rs9101054
+
+Spectral ranges:
+B: 418 - 510
+G: 490 - 580
+R: 573 - 645
+NIR: 705 - 820
+
+```{r}
+blue_channel <- hyper |> 
+  filter(wavelength >= 418, 
+         wavelength <= 510) |> 
+  group_by(id, year) |> 
+  summarise(blue = mean(reflectance_raw))
+
+
+green_channel <- hyper |> 
+  filter(wavelength >= 490, 
+         wavelength <= 580) |> 
+  group_by(id, year) |> 
+  summarise(green = mean(reflectance_raw))
+
+red_channel <- hyper |> 
+  filter(wavelength >= 573, 
+         wavelength <= 645) |> 
+  group_by(id, year) |> 
+  summarise(red = mean(reflectance_raw))
+
+nir_channel <- hyper |> 
+  filter(wavelength >= 705, 
+         wavelength <= 820) |> 
+  group_by(id, year) |> 
+  summarise(nir = mean(reflectance_raw))
+```
+
+
+```{r}
+hyper_wide <- hyper |> 
+  pivot_wider(id_cols = c(id, year), values_from = reflectance_smoothed,  names_from = wavelength, names_prefix = "R") |> 
+  left_join(blue_channel) |> 
+  left_join(green_channel) |> 
+  left_join(red_channel) |> 
+  left_join(nir_channel)
+
+channels <- data.frame(channels = names(hyper_wide))
+```
+
+```{r}
+overall_ref <- hyper |> 
+  group_by(id, year) |> 
+  summarise(mr = mean(reflectance_smoothed))
+```
+
+
+```{r}
+indices <- hyper_wide |> 
+  mutate(endvi = ((nir+green)- 2*blue)/((nir + green) + 2*blue),
+         evi = 2.5 * ((nir -red)/(nir + 6*red - 7.5*blue + 1)),
+         exgi = 2*green - red + blue,
+         gcc = green/(blue + green + red),
+         grvi = (green - red)/(green + red),
+         msavi = (2*nir + 1 - sqrt((2*nir +1)^2 - 8*(nir-red)))/2,
+         msr = ((R800.34/R669.23)-1)/(sqrt((R800.34/R669.23) +1)),
+         ndvi = (nir-red)/(nir + red),
+         remsr = (R750.93 - R444.89)/ (R704.53-R444.89),
+         psri = (R680.07-R500.37)/R750.93,
+         rendvi = (nir - R709.97)/ (nir + R709.97),
+         sipi = (R800.34 - R444.89)/(R800.34 + R680.07),
+         sr = nir/R709.97,
+         vari = (green-red)/(blue+green+red)) |> 
+  select(id, year, endvi, evi, exgi, gcc, grvi, msavi, msr, ndvi, remsr, psri, rendvi, sipi, sr, vari) |> left_join(overall_ref)
+```
+## 2020 Corrplot
+
+```{r, fig.height=8}
+indices |> 
+  filter(year == 2020) |> 
+  left_join(scores_2020 |> 
+              mutate(year = 2020,
+                     id= as.character(plot_id_fe))) |> 
+  filter(!is.na(pad),
+         treatment == "No fungicide") |> 
+  select(where(is.numeric)) |> 
+  select(-plot_id_fe, -bay) |> 
+  ggstatsplot::ggcorrmat()
+```
+
+## 2022 Corrplot
+
+```{r, fig.height=8}
+indices |> 
+  filter(year == 2022) |> 
+  left_join(scores_2022 |> 
+              mutate(year = 2022,
+                     id= as.character(tray_id))) |> 
+  filter(!is.na(pad),
+         treatment == "Infected") |> 
+  select(where(is.numeric)) |> 
+  select(-scoring_order, -plots, -splots, -block) |>
+  ggstatsplot::ggcorrmat()
+```
+
+```{r}
+write_csv(indices , "out/data/indices.csv")
+```
+
+```{r}
+sessionInfo()
+```

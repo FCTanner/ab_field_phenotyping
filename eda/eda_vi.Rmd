@@ -1,0 +1,55 @@
+---
+title: "Trait EDA"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+
+```{r}
+rm(list=ls())
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+```
+
+## Load data
+
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+indices_2020 <- read_csv("../vi_extraction/out/data/indices_2020.csv")
+lidar_2020 <- read_csv("../data/2020/lidar_traits.csv")
+
+```
+
+```{r, fig.height=6}
+index_matrix_2020 <- indices_2020 |> 
+  left_join(lidar_2020) |> 
+  left_join(scores_2020) |> 
+  filter(!is.na(pad),
+         treatment == "No fungicide") |> 
+  select(where(is.numeric)) |> 
+  select(-plot_id_fe, -bay)
+
+names(index_matrix_2020) <- toupper(names(index_matrix_2020))
+
+p_cor_2020 <- index_matrix_2020 |> 
+  ggstatsplot::ggcorrmat()
+
+p_cor_2020
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+sessionInfo()
+```

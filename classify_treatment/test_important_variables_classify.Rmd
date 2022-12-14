@@ -1,0 +1,335 @@
+---
+title: "Test important variables for  classification of treatments"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+# Steps for variable selection
+
+see 10.1186/s13007-019-0508-7
+Li 2019 Plant Methods
+
+- Continuation of variable_selection_classify_treatment.Rmd
+- Exploring important variables
+- Fitting simple model on 2020 data and evaluating on 2022 data
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+.libPaths("C:/R-packages2")
+rm(list=ls())
+`%nin%` = Negate(`%in%`)
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(patchwork)
+library(tidymodels)
+```
+
+# Load data
+
+
+```{r}
+vip <- read_csv("out/metrics/variable_importance_classify_di.csv")
+```
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+hyperspec_full_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+lidar_2020 <- read_csv("../data/2020/lidar_traits.csv")
+```
+
+## 2022
+
+```{r}
+scores_2022 <- read_csv("../data/2022/scores.csv")
+hyperspec_full_2022 <- read_csv("../data/2022/hyperspec_full.csv")
+lidar_2022 <- read_csv("../data/2022/lidar_traits.csv")
+```
+```{r}
+mod_data_2020 <- hyperspec_full_2020 |> 
+  pivot_wider(id_cols = plot_id_fe, values_from = reflectance_smoothed, names_from = wavelength, names_prefix = "R") |> 
+  left_join(scores_2020) |> 
+  left_join(lidar_2020) |> 
+  filter(treatment %in% c("No fungicide", "FN Chlorothalonil")) |> 
+  select(-c(experiment, row, bay, rep, type, pad)) 
+```
+
+```{r}
+mod_data_2022 <- hyperspec_full_2022 |> 
+  filter(!is.na(tray_id)) |> 
+  pivot_wider(id_cols = tray_id, values_from = reflectance_smoothed, names_from = wavelength, names_prefix = "R") |> 
+  left_join(scores_2022) |> 
+  left_join(lidar_2022 |> 
+              filter(!is.na(groundcover)) |> 
+              mutate(tray_id = str_replace(tray_id, "_", "__"))) |> 
+  rename(plot_id_fe = tray_id) |> 
+  select(-c(scoring_order, plots, splots, block, pad))
+```
+
+```{r}
+mean_importances <- vip |> 
+  group_by(index, year) |> 
+  summarise(mean_importance = mean(importance, na.rm = T),
+            sd_importance = sd(importance, na.rm= T)) |> 
+  group_by(year) |> 
+  mutate(rescaled_importance= scales::rescale(mean_importance, to = c(-1, 1))) 
+
+write_csv(mean_importances, "out/metrics/mean_variable_importance_classify_di.csv")
+```
+
+
+```{r}
+wavelength_importance <- mean_importances |> 
+  filter(index %nin% c("Biomass", "Ground cover")) |> 
+  mutate(wavelength = as.numeric(str_remove(index, "R"))) 
+
+lidar_importance <-  mean_importances |> 
+  filter(index %in% c("Biomass", "Ground cover")) 
+```
+
+```{r}
+p_wavelength_importance <- wavelength_importance |> 
+  ggplot(aes(x = wavelength, y = rescaled_importance, color = rescaled_importance, fill = rescaled_importance)) +
+  geom_col() +
+  scale_y_continuous(limits = c(-1,1)) +
+  # scale_color_distiller(palette = "BrBG", type = "div", limits = c(-1, 1)) +
+  # scale_fill_distiller(palette = "BrBG", type = "div", limits = c(-1, 1)) +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  facet_wrap(~year, nrow = 2) +
+  theme(legend.position = "bottom") +
+  labs(x= "Wavelength", 
+       y = "Variable importance (scaled)",
+       color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)")
+```
+
+```{r}
+p_lidar_importance <-   lidar_importance |> 
+  ggplot(aes(x = index, y = rescaled_importance, fill = rescaled_importance)) +
+  geom_col(width = 0.6, color = "black") +
+  # scale_color_distiller(palette = "BrBG", type = "div", limits = c(-1, 1)) +
+  # scale_fill_distiller(palette = "BrBG", type = "div", limits = c(-1, 1)) +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 8)) +
+  scale_y_continuous(limits = c(-1,1)) +
+  facet_wrap(~year, nrow = 2) +
+  theme(legend.position = "bottom",
+        axis.title.y = element_blank()) +
+  labs(x= "Lidar traits", 
+       y = "Variable importance (scaled)",
+       color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)")
+```
+
+```{r}
+p_importance <- 
+  p_wavelength_importance + 
+  p_lidar_importance + 
+  plot_layout(guides = "collect", 
+              design = "AAAAAAAABB") &
+  theme(legend.position = "bottom")
+
+p_importance
+```
+
+
+```{r}
+ggsave(plot = p_importance, filename= "out/graphs/variable_importance_classify_di.pdf", units = "cm", width= 18, height = 14, limitsize = F)
+```
+
+
+```{r}
+wavelength_importance |> 
+  group_by(year) |> 
+  slice_max(order_by = rescaled_importance, n = 10) |> 
+  group_by(year) |> 
+  summarise(center_wavelength= mean(wavelength))
+
+
+important_ir_range_2020 <- wavelength_importance |> 
+  ungroup() |> 
+  filter(year == 2020, 
+         wavelength >600,
+         wavelength < 1000,
+         rescaled_importance > 0.5) |> 
+  distinct(index, wavelength) |> 
+  pull(index)
+
+important_ir_range_2022 <- wavelength_importance |> 
+  ungroup() |> 
+  filter(year == 2022, 
+         wavelength >600,
+         wavelength < 1000,
+         rescaled_importance > 0.5) |> 
+  distinct(index, wavelength) |> 
+  pull(index)
+
+max_important_2022 <- wavelength_importance |> 
+  ungroup() |> 
+  group_by(year) |> 
+  slice_max(order_by = rescaled_importance, n = 7)
+
+max_important_2022
+```
+
+## Train 2020, test on 2022
+
+```{r}
+vi_dat_2020 <-  mod_data_2020 |> 
+  select(plot_id_fe, treatment, id_with_controls, R756.4) |> 
+  mutate(plot_id_fe = as.character(plot_id_fe))
+
+set.seed(123)
+folds_for_cv_2020 <- vfold_cv(vi_dat_2020, v = 5, repeats = 5, strata = treatment)
+
+logreg_recipe <- recipe(treatment ~ ., 
+                        data =vi_dat_2020) |> 
+  update_role(plot_id_fe, new_role = "ID")|>
+  update_role(id_with_controls, new_role = "ID") |> 
+  step_normalize() 
+
+logreg_recipe |> prep() |> juice()
+
+logreg_engine <- logistic_reg() |> 
+  set_engine("glm") 
+
+logreg_workflow <- workflow() |>
+  add_model(logreg_engine) |>
+  add_recipe(logreg_recipe)
+```
+
+### CV metrics for 2020 
+
+```{r}
+logreg_workflow |> 
+  fit_resamples(folds_for_cv_2020) |> 
+  collect_metrics()
+```
+
+### Evaluate on 2022 data
+
+```{r}
+full_fit_2020 <- logreg_workflow |> fit(vi_dat_2020)
+
+predict_2022 <- full_fit_2020 |> 
+  predict(mod_data_2022) |> 
+  bind_cols(.truth = mod_data_2022$treatment,
+            id_with_controls = mod_data_2022$id_with_controls)
+
+```
+
+```{r}
+conf_mat_pred_2022 <- predict_2022 |>
+  rename(Actual = .truth, 
+         Predicted = .pred_class) |> 
+  count(Actual, Predicted) |>
+  pivot_wider(id_cols= Actual, values_from = n, names_from = Predicted, values_fill = 0)  
+
+conf_mat_pred_2022
+```
+
+```{r}
+metrics_predict_2022 <- predict_2022 |> 
+  mutate(.truth = case_when(.truth == "Salt + Fungicide" ~ "Fungicide",
+                            .truth == "Infected" ~ "No fungicide",
+                            TRUE ~ .truth),
+         .pred_class = as.character(.pred_class),
+         .estimate = case_when(.pred_class == "FN Chlorothalonil" ~ "Fungicide",
+                               TRUE ~ .pred_class),
+         .estimate = factor(.estimate, levels = c("Fungicide", "No fungicide")),
+         .truth = factor(.truth, levels = c("Fungicide", "No fungicide"))) |> 
+  metrics(truth = .truth, estimate = .estimate)
+
+metrics_predict_2022
+```
+
+## Train 2022, test on 2020
+
+```{r}
+vi_dat_2022 <-  mod_data_2022 |> 
+  select(plot_id_fe, treatment, id_with_controls, R756.4) |>
+  mutate(plot_id_fe = as.character(plot_id_fe))
+
+set.seed(123)
+folds_for_cv_2022 <- vfold_cv(vi_dat_2022, v = 5, repeats = 5, strata = treatment)
+
+multinom_recipe <- recipe(treatment ~ ., 
+                          data =vi_dat_2022) |> 
+  update_role(plot_id_fe, new_role = "ID")|>
+  update_role(id_with_controls, new_role = "ID") |> 
+  step_normalize(all_predictors()) 
+  
+juiced_2022 <- multinom_recipe |> 
+  prep() |> 
+  juice()
+
+juiced_2022
+
+multinom_engine <- multinom_reg(mode = "classification") |> 
+  set_engine("nnet") 
+
+multinom_workflow <- workflow() |>
+  add_model(multinom_engine) |>
+  add_recipe(multinom_recipe)
+```
+
+### CV metrics for 2022
+
+```{r}
+multinom_workflow |> 
+  fit_resamples(folds_for_cv_2022) |> 
+  collect_metrics()
+```
+
+### Evaluate on 2022 data
+
+```{r}
+full_fit_2022 <- multinom_workflow |> fit(vi_dat_2022)
+
+predict_2020 <- full_fit_2022 |> 
+  predict(mod_data_2020 |> mutate(plot_id_fe = as.character(plot_id_fe))) |> 
+  bind_cols(.truth = mod_data_2020$treatment,
+            id_with_controls = mod_data_2020$id_with_controls)
+
+conf_mat_2020 <- predict_2020 |> 
+  count(.pred_class, .truth) |> 
+  rename(Actual = .truth) |> 
+  pivot_wider(values_from = n, names_from = .pred_class)
+
+conf_mat_2020
+```
+
+
+
+```{r}
+metrics_predict_2020 <- predict_2020 |> 
+  mutate(.truth = case_when(.truth == "FN Chlorothalonil" ~ "Fungicide", 
+                            .truth == "No fungicide" ~ "Infected"),
+         
+         .truth = as.factor(.truth),
+         .estimate_chr= as.character(.pred_class),
+         .estimate_chr = case_when(.estimate_chr == "Salt + Fungicide" ~ "Fungicide",
+                                 TRUE ~ .estimate_chr),
+         .estimate_fct = as.factor(.estimate_chr)) |> 
+  metrics(truth = .truth, estimate = .estimate_fct)
+metrics_predict_2020
+```
+
+
+
+
+```{r}
+sessionInfo()
+```

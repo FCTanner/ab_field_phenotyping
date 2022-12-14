@@ -1,0 +1,278 @@
+---
+title: "Select best algorithm for classification of treatments with hyperspectral data"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+.libPaths("C:/R-packages2")
+rm(list=ls())
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(prospectr)
+library(tidymodels)
+```
+
+# Load data
+
+## 2020
+
+```{r}
+cv_results_full_spectrum_2020 <- read_csv("out/metrics/classify_treatment_hyperspec_2020_5fcv_5rep_seed123.csv")
+
+cv_results_full_spectrum_2022 <- read_csv("out/metrics/classify_treatment_hyperspec_2022_5fcv_5rep_seed123.csv")
+```
+
+```{r}
+hyper_metrics_clean_2020 <- cv_results_full_spectrum_2020 |>
+  pivot_wider(names_from = .metric, values_from = .estimate) |> 
+  mutate(grouping = str_c(VNIR_only, dataset, normalization, derivative, model, "-", response, sep = " "),
+         response = str_remove(response, "reflectance_"),
+         description = str_c(model, "-", response, normalization, derivative, sep = " "),
+         sorting_hat = str_c(VNIR_only, dataset, sep = " ")) |>
+  group_by(grouping)  |>
+  summarise(mean_acc = mean(accuracy),
+            sd_acc  = sd(accuracy),
+            mean_roc_auc = mean(roc_auc),
+            sd_roc_auc = sd(roc_auc),
+            n_cv_folds = n(), # Checking that 25 folds exist
+            dataset = dataset,
+            VNIR_only = VNIR_only,
+            response = response,
+            sorting_hat = sorting_hat,
+            description = description,
+            normalization = normalization, 
+            derivative = derivative,
+            model = model) |>
+  distinct() 
+```
+
+```{r}
+hyper_metrics_clean_2022 <- cv_results_full_spectrum_2022 |>
+  pivot_wider(names_from = .metric, values_from = .estimate) |> 
+  mutate(grouping = str_c(VNIR_only, dataset, normalization, derivative, model, "-", response, sep = " "),
+         response = str_remove(response, "reflectance_"),
+         description = str_c(model, "-", response, normalization, derivative, sep = " "),
+         sorting_hat = str_c(VNIR_only, dataset, sep = " ")) |>
+  group_by(grouping)  |>
+  summarise(mean_acc = mean(accuracy, na.rm = T),
+            sd_acc  = sd(accuracy, na.rm = T),
+            mean_roc_auc = mean(roc_auc, na.rm = T),
+            sd_roc_auc = sd(roc_auc, na.rm = T),
+            n_cv_folds = n(), # Checking that 25 folds exist
+            dataset = dataset,
+            VNIR_only = VNIR_only,
+            response = response,
+            sorting_hat = sorting_hat,
+            description = description,
+            normalization = normalization, 
+            derivative = derivative,
+            model = model) |>
+  distinct() 
+```
+```{r}
+hyper_metrics_clean_2020 |> 
+  ungroup() |> 
+  slice_max(order_by = mean_acc, n = 3)
+```
+
+```{r}
+hyper_metrics_clean_2022 |> 
+  ungroup() |> 
+  slice_max(order_by = mean_acc, n = 3)
+```
+
+# Train full models + test on opposite years
+
+## Load data
+
+```{r}
+scores_2022 <- read_csv("../data/2022/scores.csv") |> rename(plot_id_fe = tray_id)
+hyperspec_full_2022 <- read_csv("../data/2022/hyperspec_full.csv") |> rename(plot_id_fe = tray_id)
+hyperspec_FWHM_2022 <- read_csv("../data/2022/hyperspec_FWHM.csv") |> rename(plot_id_fe = tray_id)
+hyperspec_double_FWHM_2022 <- read_csv("../data/2022/hyperspec_double_FWHM.csv") |> rename(plot_id_fe = tray_id)
+```
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+hyperspec_full_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+hyperspec_FWHM_2020 <- read_csv("../data/2020/hyperspec_FWHM.csv")
+hyperspec_double_FWHM_2020 <- read_csv("../data/2020/hyperspec_double_FWHM.csv")
+```
+
+## Prep data
+2020: Full spectrum Pu First SVM - reflectance_raw	(VNIR_only = F)
+2022: Full spectrum None None RF - reflectance_raw (VNIR_only = T)
+
+
+```{r}
+source("../helper_functions/prep_hyperspec_dataset.R")
+
+train_2020 <- prep_hyperspec_dataset(dataset = hyperspec_full_2020,
+                                     scores = scores_2020,
+                                     nil_only = FALSE,
+                                     VNIR_only = FALSE,
+                                     response_chr = "reflectance_raw",
+                                     normalization = "Pu",
+                                     derivative = "First",
+                                     gapDer_wl = 1,
+                                     gapDer_seg = 9)
+
+train_2022 <- prep_hyperspec_dataset(dataset = hyperspec_full_2022,
+                                     scores = scores_2022,
+                                     nil_only = FALSE,
+                                     VNIR_only = TRUE,
+                                     response_chr = "reflectance_raw",
+                                     normalization = "None",
+                                     derivative = "None",
+                                     gapDer_wl = 1,
+                                     gapDer_seg = 9)
+```
+
+```{r}
+test_2022 <- prep_hyperspec_dataset(dataset = hyperspec_full_2022,
+                                    scores = scores_2022,
+                                    nil_only = FALSE,
+                                    VNIR_only = FALSE,
+                                    response_chr = "reflectance_raw",
+                                    normalization = "Pu",
+                                    derivative = "First",
+                                    gapDer_wl = 1,
+                                    gapDer_seg = 9)
+
+test_2020 <- prep_hyperspec_dataset(dataset = hyperspec_full_2020,
+                                    scores = scores_2020,
+                                    nil_only = FALSE,
+                                    VNIR_only = TRUE,
+                                    response_chr = "reflectance_raw",
+                                    normalization = "None",
+                                    derivative = "None",
+                                    gapDer_wl = 1,
+                                    gapDer_seg = 9)
+```
+
+## Set engine params
+
+```{r}
+detect_recipe_2020 <- recipe((treatment ~ .), 
+                             data = train_2020)  |>
+  update_role(pad, new_role = "ID") |> 
+  update_role(plot_id_fe, new_role = "ID") |> 
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |>
+  step_zv(all_predictors())
+
+detect_recipe_2022 <- recipe((treatment ~ .), 
+                             data = train_2022)  |>
+  update_role(pad, new_role = "ID") |> 
+  update_role(plot_id_fe, new_role = "ID") |> 
+  step_center(all_predictors()) |>
+  step_scale(all_predictors()) |>
+  step_zv(all_predictors())
+
+svm_spec <- svm_rbf(cost = 50) |>
+  set_engine("kernlab") |>
+  set_mode("classification") |>
+  translate()
+
+rf_spec <- rand_forest() |>
+  set_engine("ranger") |>
+  set_mode("classification") |>
+  translate()
+
+svm_wf <- workflow() |>
+  add_model(svm_spec) |>
+  add_recipe(detect_recipe_2020)
+
+rf_wf <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(detect_recipe_2022)
+```
+
+
+```{r}
+set.seed(123)
+mod_2020 <- svm_wf |> fit(train_2020)
+mod_2022 <- rf_wf |> fit(train_2022)
+```
+
+```{r}
+predict_2022 <- mod_2020 |> 
+  predict(test_2022) |> 
+  bind_cols(test_2022$treatment)
+
+predict_2020 <- mod_2022 |> 
+  predict(test_2020) |>
+  bind_cols(test_2020$treatment)
+
+```
+
+
+
+Continue here: maybe rename predicted classes OR determine which classifications should be considered correct
+
+
+```{r}
+conf_mat_pred_2020 <- predict_2020 |>
+  rename(Actual = ...2, 
+         Predicted = .pred_class) |> 
+  count(Actual, Predicted) |> 
+  # bind_rows(data.frame(Actual = "Salt + Fungicide", Predicted = "Salt + Fungicide", n = 0)) |> 
+  pivot_wider(id_cols= Actual, values_from = n, names_from = Predicted, values_fill = 0) |> 
+  bind_cols(`Salt + Fungicide` = 0) # Manually adding the missing prediction class
+conf_mat_pred_2020
+```
+
+```{r}
+metrics_predict_2020 <- predict_2020 |> 
+  mutate(.truth = case_when(...2 == "FN Chlorothalonil" ~ "Fungicide", 
+                            ...2 == "No fungicide" ~ "Infected"),
+         .truth = as.factor(.truth),
+         .estimate_chr= as.character(.pred_class),
+         .estimate_fct = as.factor(.estimate_chr)) |> 
+  metrics(truth = .truth, estimate = .estimate_fct)
+metrics_predict_2020
+```
+
+```{r}
+conf_mat_pred_2022 <- predict_2022 |>
+  rename(Actual = ...2, 
+         Predicted = .pred_class) |> 
+  count(Actual, Predicted) |>
+  pivot_wider(id_cols= Actual, values_from = n, names_from = Predicted, values_fill = 0) |> 
+  bind_cols(`FN Chlorothalonil` = 0) # Manually adding the missing prediction class
+
+conf_mat_pred_2022
+```
+
+```{r}
+metrics_predict_2022 <- predict_2022 |> 
+  mutate(.truth = case_when(...2 == "Salt + Fungicide" ~ "Fungicide",
+                            ...2 == "Infected" ~ "No fungicide",
+                            TRUE ~ ...2),
+         .pred_class = as.character(.pred_class),
+         .estimate = case_when(.pred_class == "FN Chlorothalonil" ~ "Fungicide",
+                               TRUE ~ .pred_class),
+         .estimate = factor(.estimate, levels = c("Fungicide", "No fungicide")),
+         .truth = factor(.truth, levels = c("Fungicide", "No fungicide"))) |> 
+  metrics(truth = .truth, estimate = .estimate)
+
+metrics_predict_2022
+```
+
+
+```{r}
+sessionInfo()
+```

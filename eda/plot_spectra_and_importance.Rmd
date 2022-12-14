@@ -1,0 +1,382 @@
+---
+title: "Trait EDA"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+
+```{r}
+rm(list=ls())
+`%nin%` = Negate(`%in%`)
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(patchwork)
+```
+
+## Load data
+
+```{r}
+hyperspec_2020 <- read_csv("../data/2020/hyperspec_full.csv")
+scores_2020 <- read_csv("../data/2020/scores.csv")
+```
+```{r}
+hyperspec_2022 <- read_csv("../data/2022/hyperspec_full.csv")
+scores_2022 <- read_csv("../data/2022/scores.csv")
+```
+```{r}
+regression_mean_feature_importance <- read_csv("../predict_DI/out/metrics/mean_variable_importance_predict_di.csv")
+
+classification_mean_feature_importance <- read_csv("../classify_treatment/out/metrics/mean_variable_importance_classify_di.csv")
+```
+```{r}
+regression_wavelength_importance <- regression_mean_feature_importance |> 
+  filter(index %nin% c("Biomass", "Ground cover")) |> 
+  mutate(wavelength = as.numeric(str_remove(index, "R"))) 
+
+regression_lidar_importance <-  regression_mean_feature_importance |> 
+  filter(index %in% c("Biomass", "Ground cover")) |> 
+  mutate(index = case_when(index == "Biomass" ~ "Bio- mass",
+                           TRUE ~ index))
+
+classification_wavelength_importance <- classification_mean_feature_importance |> 
+  filter(index %nin% c("Biomass", "Ground cover")) |> 
+  mutate(wavelength = as.numeric(str_remove(index, "R"))) 
+
+classification_lidar_importance <-  classification_mean_feature_importance |> 
+  filter(index %in% c("Biomass", "Ground cover"))|> 
+  mutate(index = case_when(index == "Biomass" ~ "Bio- mass",
+                           TRUE ~ index))
+```
+
+# Regression variable importance plots
+
+## 2020
+
+### Plot spectrum nil treatment 2020
+
+```{r}
+p_nil_spectrum_2020 <- hyperspec_2020 |> 
+  left_join(scores_2020) |> 
+  filter(treatment == "No fungicide") |> 
+  ggplot(aes(x = wavelength, y = reflectance_smoothed, group = plot_id_fe, color = pad)) +
+  geom_line(alpha = 0.7) +
+  scale_color_viridis_c() +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  theme(legend.position = "top", legend.box = "horizontal",
+        legend.title = element_text(vjust = 0.8)) +
+  labs(x = "Wavelength [nm]", 
+       y = "Reflectance", 
+       color = "Plots 2020: Percent AB damage (No Fungicide treatment only)")
+```
+
+### Variable importance regression 2020
+
+```{r}
+p_wavelength_importance_regression_2020 <- regression_wavelength_importance |> 
+  filter(year == 2020) |> 
+  ggplot(aes(x = wavelength, y = rescaled_importance, color = rescaled_importance, fill = rescaled_importance)) +
+  geom_col() +
+  scale_y_continuous(limits = c(-1,1)) +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(vjust = 0.8)) +
+  labs(x= "Wavelength [nm]", 
+       y = "VI",
+       color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)")
+```
+
+
+### Importance lidar traits regression 2020 
+
+```{r}
+p_lidar_importance_regression_2020  <-  regression_lidar_importance |> 
+  filter(year == 2020) |> 
+  ggplot(aes(x = index, y = rescaled_importance, fill = rescaled_importance)) +
+  geom_col(width = 0.6, color = "black") +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) +
+  scale_y_continuous(limits = c(-1,1)) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        plot.title = element_blank()) +
+  labs(color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)",
+       y = "VI")
+
+p_lidar_importance_regression_2020
+```
+
+
+### Combine regression 2020 plot
+
+```{r}
+reg_plot_2020 <- p_nil_spectrum_2020 + p_wavelength_importance_regression_2020 + 
+  plot_layout(nrow = 2, 
+              design = "A
+                        A
+                        A
+                        B") + 
+  inset_element(p_lidar_importance_regression_2020, 0,0,0.25,0.45, align_to = 'full')
+```
+
+## 2022
+
+### Plot spectrum nil treatment 2022
+
+```{r}
+p_nil_spectrum_2022 <- hyperspec_2022 |> 
+  left_join(scores_2022) |> 
+  filter(treatment == "Infected") |> 
+  ggplot(aes(x = wavelength, y = reflectance_smoothed, group = tray_id, color = pad)) +
+  geom_line(alpha = 0.7) +
+  scale_color_viridis_c() +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  theme(legend.position = "top", legend.box = "horizontal",
+        legend.title = element_text(vjust = 0.8)) +
+  labs(x = "Wavelength [nm]", 
+       y = "Reflectance", 
+       color = "Trays 2022: Percent AB damage (Infected treatment only)")
+```
+
+### Variable importance regression 2022
+
+```{r}
+p_wavelength_importance_regression_2022 <- regression_wavelength_importance |> 
+  filter(year == 2022) |> 
+  ggplot(aes(x = wavelength, y = rescaled_importance, color = rescaled_importance, fill = rescaled_importance)) +
+  geom_col() +
+  scale_y_continuous(limits = c(-1,1)) +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(vjust = 0.8)) +
+  labs(x= "Wavelength [nm]", 
+       y = "VI",
+       color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)")
+```
+
+
+### Importance lidar traits regression 2022 
+
+```{r}
+p_lidar_importance_regression_2022  <-  regression_lidar_importance |> 
+  filter(year == 2022) |> 
+  ggplot(aes(x = index, y = rescaled_importance, fill = rescaled_importance)) +
+  geom_col(width = 0.6, color = "black") +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) +
+  scale_y_continuous(limits = c(-1,1)) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        plot.title = element_blank()) +
+  labs(color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)",
+       y = "VI")
+
+p_lidar_importance_regression_2022
+```
+
+
+### Combine regression 2022 plot
+
+```{r}
+reg_plot_2022 <- p_nil_spectrum_2022 + p_wavelength_importance_regression_2022 + 
+  plot_layout(nrow = 2, 
+              design = "A
+                        A
+                        A
+                        B") + 
+  inset_element(p_lidar_importance_regression_2022, 0,0,0.25,0.45, align_to = 'full')
+```
+
+
+
+
+# Classification variable importance plots
+
+## 2020
+
+### Plot spectrum nil treatment 2020
+
+```{r}
+trt_cols_2020 <- c("#5C5C5C", "#56B4E9FF")
+
+p_all_spectrum_2020 <- hyperspec_2020 |> 
+  left_join(scores_2020) |> 
+  filter(treatment %in% c("No fungicide", "FN Chlorothalonil")) |> 
+  ggplot(aes(x = wavelength, y = reflectance_smoothed, color = treatment)) +
+  geom_line(aes(group = plot_id_fe), alpha = 0.5, size = 0.3) +
+  stat_summary(fun= mean, geom = "line", size = 1, alpha =1) +
+  scale_color_manual(values = trt_cols_2020) +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  theme(legend.position = "top", legend.box = "horizontal",
+        legend.title = element_text(vjust = 0.6)) +
+  labs(x = "Wavelength [nm]", 
+       y = "Reflectance", 
+       color = "Plots 2020: Treatment")
+  
+p_all_spectrum_2020
+```
+
+### Variable importance classification 2020
+
+```{r}
+p_wavelength_importance_classification_2020 <- classification_wavelength_importance |> 
+  filter(year == 2020) |> 
+  ggplot(aes(x = wavelength, y = rescaled_importance, color = rescaled_importance, fill = rescaled_importance)) +
+  geom_col() +
+  scale_y_continuous(limits = c(-1,1)) +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(vjust = 0.8)) +
+  labs(x= "Wavelength [nm]", 
+       y = "VI",
+       color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)")
+```
+
+
+### Importance lidar traits classification 2020 
+
+```{r}
+p_lidar_importance_classification_2020  <-  classification_lidar_importance |> 
+  filter(year == 2020) |> 
+  ggplot(aes(x = index, y = rescaled_importance, fill = rescaled_importance)) +
+  geom_col(width = 0.6, color = "black") +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) +
+  scale_y_continuous(limits = c(-1,1)) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        plot.title = element_blank()) +
+  labs(color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)",
+       y = "VI")
+
+p_lidar_importance_classification_2020
+```
+
+
+### Combine classification 2020 plot
+
+```{r}
+class_plot_2020 <- p_all_spectrum_2020 + p_wavelength_importance_classification_2020 + 
+  plot_layout(nrow = 2, 
+              design = "A
+                        A
+                        A
+                        B") + 
+  inset_element(p_lidar_importance_classification_2020, 0,0,0.25,0.45, align_to = 'full')
+```
+
+## 2022
+
+### Plot spectrum nil treatment 2022
+
+```{r}
+trt_cols_2022 <- c("#CC79A7FF", "#E69F00FF","#009E73FF")
+
+p_all_spectrum_2022 <- hyperspec_2022 |> 
+  left_join(scores_2022) |> 
+  filter(!is.na(treatment)) |> 
+  ggplot(aes(x = wavelength, y = reflectance_smoothed, color = treatment)) +
+  geom_line(aes(group = tray_id), alpha = 0.7, size = 0.3) +
+  stat_summary(fun= mean, geom = "line", size = 1, alpha =1) +
+  scale_color_manual(values = trt_cols_2022) +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  theme(legend.position = "top", legend.box = "horizontal",
+        legend.title = element_text(vjust = 0.6)) +
+  labs(x = "Wavelength [nm]", 
+       y = "Reflectance", 
+       color = "Trays 2022: Treatment")
+  
+p_all_spectrum_2022
+```
+
+### Variable importance classification 2022
+
+```{r}
+p_wavelength_importance_classification_2022 <- classification_wavelength_importance |> 
+  filter(year == 2022) |> 
+  ggplot(aes(x = wavelength, y = rescaled_importance, color = rescaled_importance, fill = rescaled_importance)) +
+  geom_col() +
+  scale_y_continuous(limits = c(-1,1)) +
+  scale_x_continuous(breaks = seq(400, 1600, 200)) +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(vjust = 0.8)) +
+  labs(x= "Wavelength [nm]", 
+       y = "VI",
+       color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)")
+```
+
+
+### Importance lidar traits classification 2022 
+
+```{r}
+p_lidar_importance_classification_2022  <-  classification_lidar_importance |> 
+  filter(year == 2022) |> 
+  ggplot(aes(x = index, y = rescaled_importance, fill = rescaled_importance)) +
+  geom_col(width = 0.6, color = "black") +
+  scico::scale_color_scico(palette = "vik", limits = c(-1,1)) +
+  scico::scale_fill_scico(palette = "vik", limits = c(-1,1)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 4)) +
+  scale_y_continuous(limits = c(-1,1)) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        plot.title = element_blank()) +
+  labs(color = "Variable importance (scaled)",
+       fill = "Variable importance (scaled)",
+       y = "VI")
+
+p_lidar_importance_classification_2022
+```
+
+
+### Combine classification 2022 plot
+
+```{r}
+class_plot_2022 <- p_all_spectrum_2022 + p_wavelength_importance_classification_2022 + 
+  plot_layout(nrow = 2, 
+              design = "A
+                        A
+                        A
+                        B") + 
+  inset_element(p_lidar_importance_classification_2022, 0,0,0.25,0.45, align_to = 'full')
+```
+
+# Save plots
+
+```{r}
+ggsave(plot= reg_plot_2020, filename = "out/graphs/reg_2020_spectrum_importance.pdf", device = "pdf", units = "cm", width = 16, height = 16, limitsize = F)
+
+ggsave(plot= reg_plot_2022, filename = "out/graphs/reg_2022_spectrum_importance.pdf", device = "pdf", units = "cm", width = 16, height = 16, limitsize = F)
+
+ggsave(plot= class_plot_2020, filename = "out/graphs/class_2020_spectrum_importance.pdf", device = "pdf", units = "cm", width = 16, height = 16, limitsize = F)
+
+ggsave(plot= class_plot_2022, filename = "out/graphs/class_2022_spectrum_importance.pdf", device = "pdf", units = "cm", width = 16, height = 16, limitsize = F)
+```
+
+
+
+```{r}
+sessionInfo()
+```

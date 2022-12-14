@@ -1,0 +1,127 @@
+---
+title: "Test EVI for prediction of DI"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+- Fitting simple model on 2020 data and evaluating on 2022 data
+
+# Setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+.libPaths("C:/R-packages2")
+rm(list=ls())
+`%nin%` = Negate(`%in%`)
+```
+
+## Load packages
+
+```{r,  message = FALSE}
+library(tidyverse)
+library(ggplot2); theme_set(theme_bw())
+library(tidymodels)
+```
+
+# Load data
+
+
+```{r}
+scores_2020 <- read_csv("../data/2020/scores.csv")
+scores_2022 <- read_csv("../data/2022/scores.csv")
+vis <- read_csv("../vi_extraction/out/data/indices.csv")
+```
+
+
+```{r}
+mod_data_2020 <- vis |> 
+  filter(year == 2020) |> 
+  mutate(plot_id_fe = as.double(id)) |> 
+  left_join(scores_2020) |> 
+  filter(treatment == "No fungicide") |> 
+  select(-c(experiment, row, bay, rep, type, id)) 
+```
+
+```{r}
+mod_data_2022 <-vis |> 
+  filter(year == 2022) |> 
+  mutate(tray_id = as.character(id)) |> 
+  left_join(scores_2022) |> 
+  filter(treatment == "Infected") |> 
+  select(-c(scoring_order, plots, splots, block, )) 
+```
+
+
+
+
+
+## Train 2020, test on 2022
+
+```{r}
+evi_dat_2020 <-  mod_data_2020 |> 
+  select(treatment, id_with_controls, pad, evi) 
+
+set.seed(123)
+folds_for_cv_2020 <- vfold_cv(evi_dat_2020, v = 5, repeats = 5, strata = pad)
+
+lm_recipe <- recipe(pad ~ ., 
+                    data =evi_dat_2020) |> 
+  update_role(treatment, new_role = "ID")|>
+  update_role(id_with_controls, new_role = "ID") |> 
+  step_normalize(all_predictors()) 
+
+lm_recipe |> prep() |> juice()
+
+lm_engine <- linear_reg() |> 
+  set_engine("lm")
+
+lm_workflow <- workflow() |>
+    add_model(lm_engine) |>
+    add_recipe(lm_recipe)
+```
+
+### CV metrics for 2020 
+
+```{r}
+lm_workflow |> 
+  fit_resamples(folds_for_cv_2020) |> 
+  collect_metrics()
+```
+
+### Evaluate on 2022 data
+
+```{r}
+full_fit_2020 <- lm_workflow |> fit(evi_dat_2020)
+
+predictions_2022 <- full_fit_2020 |> 
+  predict(mod_data_2022) |> 
+  bind_cols(.truth = mod_data_2022$pad,
+            id_with_controls = mod_data_2022$id_with_controls)
+```
+
+### Metrics
+
+```{r}
+predictions_2022 |> 
+  metrics(truth = .truth, estimate = .pred)
+
+cor.test(predictions_2022$.truth, predictions_2022$.pred, method = "spearman")
+```
+
+```{r}
+predictions_2022 |> 
+  ggplot(aes(x = .truth, y = .pred, color = id_with_controls)) +
+  scale_x_continuous(limits = c(0,100)) +
+  scale_y_continuous(limits = c(-10,100)) +
+  geom_point()
+```
+
+
+
+```{r}
+sessionInfo()
+```
