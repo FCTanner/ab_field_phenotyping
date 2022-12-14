@@ -5,6 +5,8 @@ Methods for processing of data acquired with a ground-based phenotyping platform
 
 Code and data underlying <mark>thesis chapter in:</mark>
 
+![](https://github.com/FCTanner/ab_field_phenotyping/blob/main/reg_2020_spectrum_importance.png)
+
 ## Getting started
 
 ### Contents
@@ -15,6 +17,13 @@ Code and data underlying <mark>thesis chapter in:</mark>
 	* Lidar data
 	* Visual scores
 
+- [EDA](https://github.com/FCTanner/ab_field_phenotyping/tree/main/eda)
+
+- [Extraction of vegetation indices](https://github.com/FCTanner/ab_field_phenotyping/tree/main/vi_extraction)
+
+- [Prediction of DI and variable selection](https://github.com/FCTanner/ab_field_phenotyping/tree/main/predict_DI)
+
+- [Classification of treatments and variable selection](https://github.com/FCTanner/ab_field_phenotyping/tree/main/classify_treatment)
 
 
 ### Data dictionary
