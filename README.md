@@ -12,7 +12,7 @@ Code and data underlying <mark>thesis chapter in:</mark>
 ### Contents
 
 - [Data](https://github.com/FCTanner/ab_hsi_phenotyping/tree/main/raw_data)
-	* Raw FieldExplorer data <mark>available via Pawsey</mark>
+	* Raw FieldExplorer data [Available via Pawsey](https://projects.pawsey.org.au/appf-tpa-0556-fe-sardi-davidson-chickpeas-turretfield/index.html )
 	* Hyperspectral data (for preprocessing methods, see https://github.com/FCTanner/ab_hsi_phenotyping)
 	* Lidar data
 	* Visual scores
